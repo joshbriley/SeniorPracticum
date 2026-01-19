@@ -47,9 +47,9 @@ function [x, t, U] = forward_heat_varK(k0, k1, N, dt, T, u0fun)
     k_imhalf = kface(1:N-1); % k_{i-1/2} for interior i=1..N-1  (N-1 x 1)
     k_iphalf = kface(2:N); % k_{i+1/2} for interior i=1..N-1  (N-1 x 1)
 
-    main = 1 + alpha * (k_imhalf + k_iphhalf) % (N-1)x1
-    lower = -alpha * k_imhalf(2:end);   % (N-2)x1
-    upper = -alpha * k_iphalf(1:end-1); % (N-2)x1
+    main = 1 + alpha * (k_imhalf + k_iphalf); 
+    lower = -alpha * k_imhalf;   
+    upper = -alpha * k_iphalf; 
 
     A = spdiags([lower, main, upper], [-1, 0, 1], N-1, N-1);
 
