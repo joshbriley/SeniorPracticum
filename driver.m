@@ -10,7 +10,7 @@ u0fun = @(x) sin(pi*x);  % satisfies u(0)=u(1)=0
 
 % Plot final time snapshot
 figure;
-plot(x, U(:,end), 'LineWidth', 2);
+plot(x, U(:,end),'r.' ,'LineWidth', 2);
 xlabel('x'); ylabel('u(x,T)');
 title(sprintf('Variable-k heat equation at T=%.3f', T));
 grid on;
