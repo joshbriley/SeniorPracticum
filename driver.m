@@ -1,8 +1,8 @@
 k0 = 1.0; 
-k1 = 0.1;     % must satisfy k0 > |k1|
+k1 = 0.1;
 N  = 200;
 dt = 1e-4;
-T  = 0.05;
+T  = 10;
 
 u0fun = @(x) sin(pi*x);  % satisfies u(0)=u(1)=0
 
