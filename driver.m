@@ -3,10 +3,12 @@ k1 = 0.9;
 N  = 200;
 dt = 1e-4;
 T  = 0.10;
+T_infy = 0.0;
+h = 1.0;
 
 u0fun = @(x) sin(pi*x);  % satisfies u(0)=u(1)=0
 
-[x,t,U] = forward_heat_varK(k0,k1,N,dt,T,u0fun);
+[x,t,U] = forward_heat_varK(k0,k1,N,dt,T,u0fun, T_infy, h);
 nt = size(U,2);
 
 writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
