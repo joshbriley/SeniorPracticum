@@ -2,12 +2,12 @@ close all;clear all; format long;
 % True values to simulate data
 k0 = 1.0; 
 k1 = 0.0;
-h = 2.0;
+h = 20.0;
 
 % Parameters
 N  = 200;
-dt = 1e-2;
-T  = 3.0;
+dt = 1e-1;
+T  = 10.0;
 T_infy = 1.0;
 big_U = 400;
 L = 1;
@@ -44,7 +44,6 @@ writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
 open(writerObj);
 figure;
 h = plot(x, Utrue(:,1), 'r.', 'LineWidth', 2);
-% pause;
 xlabel('x'); ylabel('u(x,t)');
 grid on;
 ymin = min(Utrue(:));
