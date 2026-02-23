@@ -10,7 +10,7 @@ liklihood = zeros(n_MC, 1);
 h = 20.0;
 
 % Parameters
-N  = 200;
+N  = 300;
 dt = 1e-2;
 T  = 1.0;
 T_infy = 1.0;
@@ -80,32 +80,32 @@ title('Monte Carlo Approximation of Posterior');
 grid on;
 
 %% --- Plotting a movie --- 
-% writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
-% open(writerObj);
-% figure;
-% h = plot(x, Utrue(:,1), 'r.', 'LineWidth', 2);
-% xlabel('x'); ylabel('u(x,t)');
-% grid on;
-% ymin = min(Utrue(:));
-% ymax = max(Utrue(:));
-% xlim([min(x) max(x)]);
-% ylim([ymin ymax]);
+writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
+open(writerObj);
+figure;
+h = plot(x, Utrue(:,1), 'r.', 'LineWidth', 2);
+xlabel('x'); ylabel('u(x,t)');
+grid on;
+ymin = min(Utrue(:));
+ymax = max(Utrue(:));
+xlim([min(x) max(x)]);
+ylim([ymin ymax]);
 
-% nt = size(Utrue,2);
-% % Plot a movie
-% for i = 1:nt 
-%     set(h, 'YData', Utrue(:,i));
-%     xlabel('x'); ylabel('u(x,T)');
-%     title(sprintf('Variable-k heat equation at t=%.4f', t(i)));
-%     grid on;
-%     frame = getframe(gcf); 
-%     writeVideo(writerObj, frame);
-%     pause(0.1);
-% end
+nt = size(Utrue,2);
+% Plot a movie
+for i = 1:nt 
+    set(h, 'YData', Utrue(:,i));
+    xlabel('x'); ylabel('u(x,T)');
+    title(sprintf('Variable-k heat equation at t=%.4f', t(i)));
+    grid on;
+    frame = getframe(gcf); 
+    writeVideo(writerObj, frame);
+    pause(0.01);
+end
 
-% close(writerObj);
-
-% xi = linspace(0,1,1000);
-% yi = (T_infy/big_U).*((biot.*(xi-1))/(1-biot)-1);
-% plot(xi,yi, 'b--', 'LineWidth',2); hold on;
-% plot(x, Utrue(:,i))
+close(writerObj);
+hold on;
+xi = linspace(0,1,1000);
+yi = (T_infy/big_U).*((biot.*(xi-1))/(1-biot)-1);
+plot(xi,yi, 'b--', 'LineWidth',2); hold on;
+legend('Approx', 'True Steady State')

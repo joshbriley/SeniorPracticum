@@ -17,20 +17,14 @@ function [x, t, U, full_A, rhs, biot] = forward_heat_varK( ...
     U        = zeros(N+1, Nt+1);
     U(2:N,1) = u0fun(xi);
 
-    % --- face (midpoint) diffusivity / conductivity / Biot ---
-    xface     = 0.5 * (x(1:N) + x(2:N+1)); % N faces
-    alphaFace = alpha + xface;  % diffusivity on faces
-    kFace     = rho * Cp .* alphaFace;  % conductivity on faces
-    biot      = (h * L) ./ alpha;   % Biot on faces
+    % --- Biot ---
+    biot = (h * L) ./ alpha;
 
-    % --- interior operator matrix (N-1 unknowns: i=2..N) ---
-    lam   = dt / dx^2;
-    aL    = alphaFace(1:N-1);   % i-1/2
-    aR    = alphaFace(2:N);     % i+1/2
-
-    main  = 1 + lam * (aL + aR);
-    low   = -lam * aL;
-    up    = -lam * aR;
+    % --- Define Lambda and matrix diags ---
+    lam   = alpha*(dt / dx^2);
+    main  = 1 + 2*lam;
+    low   = -lam;
+    up    = -lam;
 
     Aint = spdiags([low, main, up], [-1 0 1], N-1, N-1);
 
@@ -69,8 +63,5 @@ function [x, t, U, full_A, rhs, biot] = forward_heat_varK( ...
 
         U(:,n+1) = A \ rhs;
     end
-
-    % --- back to dimensional temperature ---
-    % U = big_U .* U + T_infy;
 end
 
