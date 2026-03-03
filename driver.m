@@ -4,7 +4,9 @@ alpha = 1.0;
 alpha_a = 0.0; 
 alpha_b = 2.0;
 n_MC = 10000;
-prior = 1/n_MC; % Assuming uniform distrobution
+
+% Uniform dist:
+prior = 1/n_MC; 
 alpha_dist = alpha_a + (alpha_b - alpha_a).*rand(n_MC, 1);
 liklihood = zeros(n_MC, 1);
 h = 20.0;
@@ -34,7 +36,7 @@ t_obs = t(obs_idx);
 Y_clean = Utrue(sensor_idx, obs_idx);
 
 % add noise
-p = 0.05;  % 2% relative noise
+p = 0.2;  % 5% relative noise
 sigma = p * max(abs(Y_clean(:)));
 
 % rng(0); % reproducible
@@ -78,6 +80,7 @@ xlabel('\alpha');
 ylabel('Posterior Probability');
 title('Monte Carlo Approximation of Posterior');
 grid on;
+exportgraphics(gcf, 'posterior_scatter.png', 'Resolution', 500);
 
 %% --- Plotting a movie --- 
 writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
@@ -100,7 +103,9 @@ for i = 1:nt
     grid on;
     frame = getframe(gcf); 
     writeVideo(writerObj, frame);
-    pause(0.01);
+    % pause(1);
+    % filename = sprintf('forward_heat_%.1f.png', i);
+    % exportgraphics(gcf, filename, 'Resolution', 500);
 end
 
 close(writerObj);
