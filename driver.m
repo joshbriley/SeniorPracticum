@@ -1,4 +1,8 @@
 close all;clear all; format long;
+set(groot, 'DefaultTextInterpreter', 'latex');
+set(groot, 'DefaultLegendInterpreter', 'latex');
+set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
+
 % True values to simulate data
 alpha = 1.0;
 alpha_a = 0.0; 
@@ -36,7 +40,7 @@ t_obs = t(obs_idx);
 Y_clean = Utrue(sensor_idx, obs_idx);
 
 % add noise
-p = 0.2;  % 5% relative noise
+p = 0.05; 
 sigma = p * max(abs(Y_clean(:)));
 
 % rng(0); % reproducible
@@ -60,27 +64,43 @@ for i = 1:n_MC
 
 end
 
+% Normalize so that integral of PDF = 1
 post = likelihood .* prior;
 
-[~, idx_max] = max(post);
-alpha_MAP = alpha_dist(idx_max);
-post_max = post(idx_max);
+% Sort by alpha for numerical integration
+[alpha_sorted, sort_idx] = sort(alpha_dist);
+post_sorted = post(sort_idx);
+
+% Numerical integral via trapezoid rule
+Z = trapz(alpha_sorted, post_sorted);  % normalizing constant
+post_normalized = post_sorted / Z;     
+
+% MAP estimate (still the max)
+[~, idx_max] = max(post_normalized);
+alpha_MAP = alpha_sorted(idx_max);
+post_max = post_normalized(idx_max);
 
 disp(['True alpha: ', num2str(alpha)])
 disp(['Alpha estimate: ', num2str(alpha_MAP)])
-disp(['Max Probability: ', num2str(post_max)])
+disp(['Max PDF value: ', num2str(post_max)])
 
 save
 % Are we still estimating alpha and h?
 save('synthetic_data.mat', 'x_sensors','t_obs','Y_noisy','Y_clean', 'alpha','h','sigma','T_infy');
 
 figure;
-scatter(alpha_dist, post, 50, 'filled');
-xlabel('\alpha');
-ylabel('Posterior Probability');
-title('Monte Carlo Approximation of Posterior');
-grid on;
-exportgraphics(gcf, 'posterior_scatter.png', 'Resolution', 500);
+scatter(alpha_sorted, post_normalized/10, 30, 'b','filled');
+ylim([0 1]);
+xlabel('$\alpha$', 'Fontsize', 20);
+ylabel('Posterior Probability', 'Fontsize', 20);
+fig_title = "Posterior distribution of $\alpha$ with relative noise = " +  p;
+title(fig_title);
+grid on; hold on;
+xline(1, '-r', 'LineWidth', 2)
+legend('Probability Distribution Function', 'True value of $\alpha$', 'Fontsize', 12)
+set(gca, 'FontSize', 14);
+filename = "figs/posterior_scatter_" + p + ".png"; 
+exportgraphics(gcf, filename, 'Resolution', 750);
 
 %% --- Plotting a movie --- 
 writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
@@ -99,13 +119,13 @@ nt = size(Utrue,2);
 for i = 1:nt 
     set(h, 'YData', Utrue(:,i));
     xlabel('x'); ylabel('u(x,T)');
-    title(sprintf('Variable-k heat equation at t=%.4f', t(i)));
+    title(sprintf('Heat Equation at t=%.4f', t(i)));
     grid on;
     frame = getframe(gcf); 
     writeVideo(writerObj, frame);
-    % pause(1);
-    % filename = sprintf('forward_heat_%.1f.png', i);
-    % exportgraphics(gcf, filename, 'Resolution', 500);
+    pause(1);
+    filename = sprintf('figs/forward_heat_%.1f.png', i);
+    exportgraphics(gcf, filename, 'Resolution', 500);
 end
 
 close(writerObj);
