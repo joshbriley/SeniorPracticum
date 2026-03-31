@@ -11,7 +11,8 @@ n_MC = 5000;
 
 % Uniform discrete prior over sampled alpha candidates
 prior = ones(n_MC, 1) ./ n_MC;
-alpha_dist = alpha_a + (alpha_b - alpha_a).*rand(n_MC, 1);
+% alpha_dist = alpha_a + (alpha_b - alpha_a).*rand(n_MC, 1); Uniform dist
+alpha_dist = alpha_a + (alpha_b - alpha_a).*normrnd(alpha_a, alpha_b, [n_MC, 1]);
 log_likelihood = zeros(n_MC, 1);
 h = 20.0;
 
@@ -28,11 +29,11 @@ u0fun = @(x) cos(pi.*x);
 
 [x,t, Utrue, full_A, rhs, biot] = forward_heat_varK(alpha, N, dt, T, u0fun, T_infy, h, big_U, L);
 
-M = 30; % Number of sensors
+M = 10; % Number of sensors
 sensor_idx = round(linspace(2, N, M));
 x_sensors = x(sensor_idx);
 
-K = 30; % Number of observation times
+K = 20; % Number of observation times
 obs_times = linspace(0.01, T, K);
 obs_idx = round(obs_times/dt) + 1;
 t_obs = t(obs_idx);
@@ -67,13 +68,11 @@ post_by_time = zeros(n_MC, K);
 
 for k = 1:K
     misfit_k = bsxfun(@minus, Y_noisy(:,k)', Y_model_all(:,:,k));
-    log_likelihood = log_likelihood ...
-        - (1/(2*sigma^2)) * sum(misfit_k.^2, 2);
+    log_likelihood = log_likelihood - (1/(2*sigma^2)) * sum(misfit_k.^2, 2);
 
     log_post_k = log(prior) + log_likelihood;
     log_post_k = log_post_k - max(log_post_k);
     post_k = exp(log_post_k);
-    post_by_time(:,k) = post_k;
 
     weights_k = post_k ./ sum(post_k);
     [~, idx_map_k] = max(weights_k);
@@ -90,7 +89,7 @@ post_sorted = post(sort_idx);
 % Numerical integral via trapezoid rule
 Z = trapz(alpha_sorted, post_sorted);  % normalizing constant
 post_normalized = post_sorted / Z;     
-post_normalized = post_normalized / 10;
+post_normalized = post_normalized;
 
 % MAP estimate
 [~, idx_max] = max(post_normalized);
@@ -108,7 +107,7 @@ save('synthetic_data.mat', 'x_sensors','t_obs','Y_noisy','Y_clean', ...
 
 figure;
 scatter(alpha_sorted, post_normalized, 30, 'b','filled');
-ylim([0 1]);
+% ylim([0 1]);
 xlabel('$\alpha$', 'Fontsize', 20);
 ylabel('Posterior Probability', 'Fontsize', 20);
 fig_title = "Posterior distribution of $\alpha$ with relative noise = " +  p;
