@@ -90,7 +90,7 @@ post_sorted = post(sort_idx);
 % Numerical integral via trapezoid rule
 Z = trapz(alpha_sorted, post_sorted);  % normalizing constant
 post_normalized = post_sorted / Z;     
-post_normalized = post_normalized / 10;
+post_normalized = post_normalized;
 
 % MAP estimate
 [~, idx_max] = max(post_normalized);
