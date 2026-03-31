@@ -1,61 +1,67 @@
-function [x, t, U] = forward_heat_varK(k0, k1, N, dt, T, u0fun)
-% forward_heat_varK
-% Solves u_t = (k(x) u_x)_x on x in (0,1), u(0,t)=u(1,t)=0, u(x,0)=u0(x) using
-% flux-form finite differences + Backward Euler.
-%
-% Inputs:
-%   k0,k1  : diffusion parameters, k(x)=k0+k1*sin(pi*x), require k0>|k1|
-%   N      : number of spatial subintervals (grid has N+1 nodes)
-%   dt     : time step
-%   T      : final time
-%   u0fun  : function handle for initial condition u0(x)
-%
-% Outputs:
-%   x      : grid (N+1 x 1)
-%   t      : time vector (1 x Nt+1)
-%   U      : solution snapshots at all grid nodes (N+1 x Nt+1)
+function [x, t, U, full_A, rhs, biot] = forward_heat_varK( ...
+    alpha, N, dt, T, u0fun, T_infy, h, big_U, L)
 
-    if k0 <= abs(k1)
-        error('Need k0 > |k1| so that k(x) stays positive.');
-    end
+    % --- constants / grid ---
+    rho = 8.9;
+    Cp  = 385;
 
-    % Grid discretization
-    h = 1 / N;
-    x = (0:N)' * h; % (N+1)x1
-    xi = x(2:N);    % interior nodes (N-1)x1
+    dx = 1/N;
+    x  = ((0:N)' * dx)./L;          % (N+1)x1 grid nodes
+    xi = x(2:N)./L;               % interior nodes
 
-    % Time
-    Nt = T / dt;
-    t = (0:Nt) * dt;
+    % --- time ---
+    Nt = round(T/dt);
+    t  = (0:Nt) * dt;
 
-    % Initial condition (include boundaries as zeros)
-    U = zeros(N+1, Nt+1);
+    % --- initial condition (dimensionless) ---
+    U        = zeros(N+1, Nt+1);
     U(2:N,1) = u0fun(xi);
 
-    % Face locations and face kappas (midpoint evaluation)
-    xface = (x(1:N) + x(2:N+1)) / 2;   % x_{i+1/2}, i=0..N-1  (N x 1)
-    kface = k0 + k1 * sin(pi * xface); % kappa_{i+1/2}        (N x 1)
+    % --- Biot ---
+    biot = (h * L) ./ alpha;
 
-    % Build tridiagonal matrix A = I - dt*L on interior unknowns
-    % For interior i=1..N-1:
-    % lower diag: -dt/h^2 * k_{i-1/2}
-    % main diag : 1 + dt/h^2*(k_{i-1/2}+k_{i+1/2})
-    % upper diag: -dt/h^2 * k_{i+1/2}
+    % --- Define Lambda and matrix diags ---
+    lam   = alpha*(dt / dx^2);
+    main  = 1 + 2*lam;
+    low   = -lam;
+    up    = -lam;
 
-    alpha = (dt / h^2);
+    Aint = spdiags([low, main, up], [-1 0 1], N-1, N-1);
 
-    k_imhalf = kface(1:N-1); % k_{i-1/2} for interior i=1..N-1  (N-1 x 1)
-    k_iphalf = kface(2:N); % k_{i+1/2} for interior i=1..N-1  (N-1 x 1)
+    % --- build full system: (u0, interior..., uN) ---
+    % Size: (N+1)x(N+1)
+    A = spalloc(N+1, N+1, 3*(N-1) + 10);
 
-    main = 1 + alpha * (k_imhalf + k_iphalf); 
-    lower = -alpha * k_imhalf;   
-    upper = -alpha * k_iphalf; 
+    % Put interior block into rows/cols 2..N
+    A(2:N, 2:N) = Aint;
 
-    A = spdiags([lower, main, upper], [-1, 0, 1], N-1, N-1);
+    % Robin boundary row at x=0 (your existing formula)
+    % robin_row(1) = biot(1)*dx - alphaFace(1);
+    % robin_row(2) = -alphaFace(1);
+    A(1,1) = biot*dx - 1;
+    A(1,2) = 1;
 
-    % Time stepping: A * u^{n+1} = u^n
+    % Couple Robin equation into first interior equation
+    A(2,1) = low(1);
+
+    % Neumann at x=1
+    A(end,end)   = 1;
+    A(end,end-1) = -1;
+
+    % Couple last interior equation to boundary uN
+    A(end-1,end) = up(1);
+
+    full_A = full(A);  % debuging
+
+    % --- time stepping ---
+    rhs = zeros(N+1,1);
     for n = 1:Nt
-        rhs = U(2:N, n);         % interior at time n
-        U(2:N, n+1) = A \ rhs;   % solve tridiagonal sparse system
+        rhs(:) = U(:,n);
+
+        rhs(1)   = 0;
+        rhs(end) = 0;
+
+        U(:,n+1) = A \ rhs;
     end
 end
+
