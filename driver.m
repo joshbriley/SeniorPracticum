@@ -7,11 +7,13 @@ set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
 alpha = 1.0;
 alpha_a = 0.0; 
 alpha_b = 2.0;
-n_MC = 5000;
+n_MC = 500;
 
 % Uniform discrete prior over sampled alpha candidates
 prior = ones(n_MC, 1) ./ n_MC;
+% --- Error caused by below ---
 alpha_dist = alpha_a + (alpha_b - alpha_a).*rand(n_MC, 1);
+% alpha_dist = lognrnd(0, 1e-1, n_MC, 1);
 log_likelihood = zeros(n_MC, 1);
 h = 20.0;
 
@@ -28,7 +30,7 @@ u0fun = @(x) cos(pi.*x);
 
 [x,t, Utrue, full_A, rhs, biot] = forward_heat_varK(alpha, N, dt, T, u0fun, T_infy, h, big_U, L);
 
-M = 30; % Number of sensors
+M = 20; % Number of sensors
 sensor_idx = round(linspace(2, N, M));
 x_sensors = x(sensor_idx);
 
@@ -86,11 +88,17 @@ post = post_by_time(:, end);
 % Sort by alpha for numerical integration
 [alpha_sorted, sort_idx] = sort(alpha_dist);
 post_sorted = post(sort_idx);
+log_likelihood_sorted = log_likelihood(sort_idx);
 
 % Numerical integral via trapezoid rule
 Z = trapz(alpha_sorted, post_sorted);  % normalizing constant
 post_normalized = post_sorted / Z;     
 post_normalized = post_normalized;
+
+% Build comparable prior and likelihood densities on the sampled alpha grid.
+prior_density = ones(size(alpha_sorted)) ./ (alpha_b - alpha_a);
+likelihood_shifted = exp(log_likelihood_sorted - max(log_likelihood_sorted));
+likelihood_density = likelihood_shifted ./ trapz(alpha_sorted, likelihood_shifted);
 
 % MAP estimate
 [~, idx_max] = max(post_normalized);
@@ -108,7 +116,7 @@ save('synthetic_data.mat', 'x_sensors','t_obs','Y_noisy','Y_clean', ...
 
 figure;
 scatter(alpha_sorted, post_normalized, 30, 'b','filled');
-ylim([0 1]);
+% ylim([0 1]);
 xlabel('$\alpha$', 'Fontsize', 20);
 ylabel('Posterior Probability', 'Fontsize', 20);
 fig_title = "Posterior distribution of $\alpha$ with relative noise = " +  p;
@@ -119,6 +127,21 @@ legend('Probability Distribution Function', 'True value of $\alpha$', 'Fontsize'
 set(gca, 'FontSize', 14);
 filename = "figs/posterior_scatter_" + p + ".png"; 
 exportgraphics(gcf, filename, 'Resolution', 750);
+
+figure;
+plot(alpha_sorted, prior_density, 'k--', 'LineWidth', 1.5); hold on;
+plot(alpha_sorted, likelihood_shifted, 'b-', 'LineWidth', 1.8);
+plot(alpha_sorted, post_normalized/15, 'r-', 'LineWidth', 1.8);
+xline(alpha, ':', 'LineWidth', 1.5, 'Color', [0.2 0.2 0.2]);
+xlabel('$\alpha$', 'Fontsize', 20);
+ylabel('Density', 'Fontsize', 20);
+title('Prior, likelihood, and posterior for $\alpha$');
+legend('Prior', 'Likelihood', 'Posterior', 'True value of $\alpha$', ...
+    'Fontsize', 12, 'Location', 'best');
+grid on;
+set(gca, 'FontSize', 14);
+exportgraphics(gcf, 'figs/prior_likelihood_posterior_overlay.png', ...
+    'Resolution', 750);
 
 figure;
 plot(t_obs, alpha_map_history, 'b-o', 'LineWidth', 1.5); hold on;
@@ -165,3 +188,14 @@ exportgraphics(gcf, 'figs/alpha_estimate_over_time.png', 'Resolution', 750);
 % yi = (T_infy/big_U).*((biot.*(xi-1))/(1-biot)-1);
 % plot(xi,yi, 'b--', 'LineWidth',2); hold on;
 % legend('Approx', 'True Steady State')
+
+figure; plot(x, Utrue(:,2), 'r.', 'LineWidth', 2)
+xlim([0 1]); ylim([-0.91 0.9])
+grid on; hold on;
+plot(linspace(0, 1, M), Y_noisy(:,1), 'bo', 'LineWidth', 2)
+xlabel('x'); ylabel('u(x,T)');title('Heat Equation at t=0.0100')
+legend()
+exportgraphics(gcf, 'ForSolvObs_half.png', 'Resolution', 700);
+set(gca, 'FontSize', 16);
+legend('Forward Solver', 'Synthetic Observational Data', 'Fontsize', 14, ...
+    'Location', 'best');
