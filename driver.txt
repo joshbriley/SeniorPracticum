@@ -7,7 +7,7 @@ set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
 alpha = 1.0;
 alpha_a = 0.0; 
 alpha_b = 2.0;
-n_MC = 7500;
+n_MC = 500;
 
 % Uniform discrete prior over sampled alpha candidates
 prior = ones(n_MC, 1) ./ n_MC;
@@ -160,41 +160,37 @@ set(gca, 'FontSize', 14);
 exportgraphics(gcf, 'figs/alpha_estimate_over_time.png', 'Resolution', 750);
 
 %% --- Plotting a movie --- (Comment for speed) 
-writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
-open(writerObj);
-figure;
-set(gca, 'FontSize', 14);
-h = plot(x, Utrue(:,1), 'r.', 'LineWidth', 2);
-xlabel('x', 'Fontsize', 20);
-ylabel('u(x,T)', 'Fontsize', 20);
-grid on;
-ymin = min(Utrue(:));
-ymax = max(Utrue(:));
-xlim([min(x) max(x)]);
-ylim([ymin ymax]);
+% writerObj = VideoWriter('my_animation.mp4', 'MPEG-4');
+% open(writerObj);
+% figure;
+% h = plot(x, Utrue(:,1), 'r.', 'LineWidth', 2);
+% xlabel('x'); ylabel('u(x,t)');
+% grid on;
+% ymin = min(Utrue(:));
+% ymax = max(Utrue(:));
+% xlim([min(x) max(x)]);
+% ylim([ymin ymax]);
 
-nt = size(Utrue,2);
-% Plot a movie
-for i = 1:nt 
-    set(h, 'YData', Utrue(:,i));
-    set(gca, 'FontSize', 14);
-    xlabel('x', 'Fontsize', 16);
-    ylabel('u(x,T)', 'Fontsize', 16);
-    title(sprintf('Heat Equation at t=%.4f', t(i)));
-    grid on;
-    frame = getframe(gcf); 
-    writeVideo(writerObj, frame);
-    pause(1);
-    filename = sprintf('figs/forward_heat_%.1f.png', i);
-    exportgraphics(gcf, filename, 'Resolution', 500);
-end
+% nt = size(Utrue,2);
+% % Plot a movie
+% for i = 1:nt 
+%     set(h, 'YData', Utrue(:,i));
+%     xlabel('x'); ylabel('u(x,T)');
+%     title(sprintf('Heat Equation at t=%.4f', t(i)));
+%     grid on;
+%     frame = getframe(gcf); 
+%     writeVideo(writerObj, frame);
+%     pause(1);
+%     filename = sprintf('figs/forward_heat_%.1f.png', i);
+%     exportgraphics(gcf, filename, 'Resolution', 500);
+% end
 
-close(writerObj);
-hold on;
-xi = linspace(0,1,1000);
-yi = (T_infy/big_U).*((biot.*(xi-1))/(1-biot)-1);
-plot(xi,yi, 'b--', 'LineWidth',2); hold on;
-legend('Approx', 'True Steady State')
+% close(writerObj);
+% hold on;
+% xi = linspace(0,1,1000);
+% yi = (T_infy/big_U).*((biot.*(xi-1))/(1-biot)-1);
+% plot(xi,yi, 'b--', 'LineWidth',2); hold on;
+% legend('Approx', 'True Steady State')
 
 figure; plot(x, Utrue(:,2), 'r.', 'LineWidth', 2)
 xlim([0 1]); ylim([-0.91 0.9])
