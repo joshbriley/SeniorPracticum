@@ -3,7 +3,8 @@
 This repository implements a simulation-based Bayesian inverse problem for a
 one-dimensional heat equation.  The goal is to infer two unknown material
 parameters from sparse and noisy temperature observations while quantifying
-uncertainty in the estimates. Currently the solver can infer only the alpha parameter. 
+uncertainty in the estimates. The driver now performs joint inference for
+both the thermal diffusivity `alpha` and the heat transfer coefficient `h`.
 
 This project serves as my project for ISC4943, Senior Practicum in FSU's
 Department of Scientific Computing.  
